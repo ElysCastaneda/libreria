@@ -1,0 +1,26 @@
+<div class="row">
+    <h1>PRESTAR LIBROS</h1>
+    {{#each mislibros}}
+    <div class="col-md-3">
+        <div class="card my-3">
+            <div class="card-body">
+                <h1 class="card-title d-flex">{{ nombre }}</h1>
+                <p>{{ autor }}</p>
+            </div>
+            <br>
+            <form action="/libros/editar/{{nombre}}" method="POST">
+                <button type="submit" class="btn btn-success btn-block form-control">
+                    Prestar Libro
+                </button>
+            </form>
+            <br>
+            <!--form action="/libros/borrar/{{nombre}}?_method=DELETE" method="POST">
+                <input type="hidden" name="_method" value="DELETE">
+                <button type="submit" class="btn btn-danger btn-block form-control my-2">
+                    Borrar Libro
+                </button>
+            </form-->
+        </div>
+    </div>
+    {{/each}}
+</div>
