@@ -4,7 +4,7 @@ const   MongoClient   = require('mongodb').MongoClient;
 //direccion de la base de datos
 //ElisJohana11#
 const uri = "mongodb+srv://ely:ely1234@cluster0.tnvei.mongodb.net/prestalibros?retryWrites=true&w=majority"
-//const uri = "mongodb+srv://admin:admin1234@cluster0.xy6qv.mongodb.net/prestalibros?retryWrites=true&w=majority";
+
 //cliente de la base de datos
 const cliente = new MongoClient(uri, { 
     useNewUrlParser: true, 
@@ -16,9 +16,9 @@ const cliente = new MongoClient(uri, {
 });
 
 
+//CONTROLLADOR
 /* ########################################################################################### */
-//                                   CONTROLADORES DE LAS RUTAS
-/* ########################################################################################### */
+
 
 //muestra la vista para registrar un nuevo libro
 librosCtrl.renderFormularioNuevoLibro = async(req, res) => {
@@ -41,10 +41,8 @@ librosCtrl.crearNuevoLibro = async(req, res) => {
 
     const mislibros = await ingresarUnNuevoLibro(datos_a_guardar).catch(console.error);
     //codigo para guardar un nuevo libro
-    res.send('nuevo libro');
-    //res.render('libros/libroguardado');
-    //res.render('libros/todosloslibros', { mislibros }); 
-    //res.redirect('libros/todosloslibros');
+    //res.send('nuevo libro');
+    res.redirect('/libros');
 }
 
 //muestra la vista de los libros que hay en la base de datos
@@ -60,30 +58,54 @@ librosCtrl.renderLibrosPrestados = async(req, res) => {
     res.render('libros/librosprestados', { mislibros });
 }
 
-//muestra los libros a prestar
-librosCtrl.renderPrestarLibros = async(req, res) => {
-    const mislibros = await mostrarLibrosSinPrestar().catch(console.error);
-    res.render('libros/prestarlibro', { mislibros });
-}
-
 //muestra la vista para editar un libro de la base de datos
 librosCtrl.renderEditarUnLibro = async(req, res) => {
-    //res.send('se editara un libro de la base de datos');
-    const mislibros = await buscarLibroPorNombre(req.params.nombre).catch(console.error);
+
+    const  nombre  = req.params.id;
+    console.log('el nombre del libro es xxxxxxxx: ', nombre);
+    const mislibros = await buscarLibroPorNombre(nombre).catch(console.error);
     res.render('libros/editarunlibro', { mislibros });
 }
 
+//muestra los libros a prestar
+librosCtrl.renderPrestarLibros = async(req, res) => {
+    const  libronombre  = req.params.id;
+    console.log('El nombre del libro para prestar es: ', libronombre);
+    const mislibros = await buscarLibroPorNombre(libronombre).catch(console.error);
+    res.render('libros/prestarlibro', { mislibros });
+}
+
+librosCtrl.prestarLibro = async(req, res) => {
+    const {  nombre, autor, lector } = req.body;
+    console.log('el nombre del libro es: ', nombre);
+    console.log('el autor del libro es: ',autor);
+    console.log('el lector del libro es: ', lector)
+    const _prestamo = 'true';
+    const fecha = obtenerfecha();
+    const mislibros = await actualizarLibroPorNombre(req.params.nombre, { nombre: nombre, autor: autor, lector: lector, prestamo: _prestamo, fecha_prestamo: fecha } ).catch(console.error);
+    //res.send('se actualizo un libro');
+    res.redirect('/libros');
+}
+
+
+
 //actualiza el libro de la base de datos
-librosCtrl.actualizarLibro = (req, res) => {
-    res.post('se actualiza un libro');
+librosCtrl.actualizarLibro = async(req, res) => {
+    const {  nombre, autor } = req.body;
+    console.log('el nombre del libro es: ', nombre);
+    console.log('el autor del libro es: ',autor);
+    const mislibros = await actualizarLibroPorNombre(req.params.nombre, { nombre: nombre, autor: autor } ).catch(console.error);
+    //res.send('se actualizo un libro');
+    res.redirect('/libros');
 }
 
 //eliminar una nota de la bas de datos
 librosCtrl.eliminarUnLibro = async(req, res) => {
     console.log('el id del libro es; ', req.params.id);
-    const mislibros = await borrarLibroporNombre(req.params.id);
-    //res.redirect('/');
-    res.send('se ha borrado un libro');
+    const mislibros = await borrarLibroporNombre(req.params.id).catch(console.error);
+    //res.redirect('/libros');
+    //res.send('se ha borrado un libro');
+    res.redirect('/libros');
 }
 
 
@@ -119,7 +141,7 @@ async function mostrarTodosLosLibros() {
             
         await cliente.connect();
         console.log('se conecto la base de datos y se listaran los libros');
-        const cursor = cliente.db("prestalibros").collection("registrodelibros").find({});
+        const cursor = cliente.db("prestalibros").collection("registrodelibros").find({ prestamo:  { $gte: "false" } });
         const resultados = await cursor.toArray();
 
         // muestro los resultados
@@ -144,11 +166,12 @@ async function mostrarTodosLosLibros() {
 //mostrar los libros prestados
 async function mostrarLibrosPrestados(){
     //conectarme a la base de datos
+    console.log('SE VAN A MOSTRAR LOS LIBROS PRESTADOS');
     try{
             
         await cliente.connect();
         console.log('se conecto la base de datos y se listaran los libros prestados');
-        const cursor = cliente.db("prestalibros").collection("registrodelibros").find({ prestamo:  { $gte: 'true' } });
+        const cursor = cliente.db("prestalibros").collection("registrodelibros").find({ prestamo:  { $gte: "true" } });
         const resultados = await cursor.toArray();
 
         // muestro los resultados
@@ -172,14 +195,15 @@ async function mostrarLibrosPrestados(){
 
 //registrar un nuevo libro
 async function ingresarUnNuevoLibro(nuevoLibro){
+    console.log('SE VA A GUARDAR UN LIBRO NUEVO');
     const resultado = await cliente.db("prestalibros").collection("registrodelibros").insertOne(nuevoLibro);
     console.log("Se registro un Nuevo Libro: ",resultado);
 }
 
-//buscar un libro
+//buscar un libro por nombre
 async function buscarLibroPorNombre(nombredellibro) {
-    resultado = await cliente.db("prestalibros").collection("registrodelibros")
-                        .findOne({ nombre: nombredellibro });
+    console.log('SE VA A BUSCAR UN LIBRO');
+    resultado = await cliente.db("prestalibros").collection("registrodelibros").findOne({ nombre: nombredellibro });
 
     if (resultado) {
         console.log(`se encontro un libro '${nombredellibro}':`);
@@ -191,9 +215,24 @@ async function buscarLibroPorNombre(nombredellibro) {
     return resultado;
 }
 
-//libros que no se han prestados
-async function mostrarLibrosSinPrestar() {
+async function buscarLibroPorId(idlibro) {
+    console.log('SE VA A BUSCAR UN LIBRO');
+    resultado = await cliente.db("prestalibros").collection("registrodelibros")
+                        .findOne({ id: idlibro });
 
+    if (resultado) {
+        console.log(`se encontro un libro '${idlibro}':`);
+        console.log(resultado);
+    } else {
+        console.log(`no se encontro el libro '${idlibro}'`);
+    }
+
+    return resultado;
+}
+
+//libros que no se han prestados
+/*async function mostrarLibrosSinPrestar() {
+    console.log('SE VAN A MSOTRAR LOS LIBROS');
     //conectarme a la base de datos
     try{
             
@@ -226,32 +265,45 @@ async function mostrarLibrosSinPrestar() {
 
 
    
-}
+}*/
 
 //actualizar un libro
 async function actualizarLibroPorNombre(nombredellibro, libroactualizar) {
-
-    resultado = await cliente.db("prestalibros").collection("registrodelibros").updateOne({ nombre: nombredellibro },
+    console.log('SE VA A ACTUALIZAR UN LIBRO: ',nombredellibro);
+    resultado = await cliente.db("prestalibros").collection("registrodelibros").updateOne(
+        { nombre: nombredellibro },
         { $set: libroactualizar },
-        { upsert: true });
+        { upsert: true }
+        );
 
         console.log(`${resultado.matchedCount} un libro encontrado.`);
 
-        if (result.upsertedCount > 0) {
-            console.log(`One document was inserted with the id ${result.upsertedId._id}`);
+        if (resultado.upsertedCount > 0) {
+            console.log(`Un libro va a ser actualizado con nombre ${resultado.upsertedId.nombre}`);
         } else {
-            console.log(`${result.modifiedCount} document(s) was/were updated.`);
+            console.log(`${resultado.modifiedCount} el libro no fue actualizado`);
         }
 
 }
 
 //borrar un libro
-async function borrarLibroporNombre(idlibro) {
-
-    resultado = await cliente.db("prestalibros").collection("registrodelibros").deleteOne({ nombre: idlibro });
+async function borrarLibroporNombre(nombrelibro) {
+    console.log('SE VA A BORRAR UN LIBRO');
+    resultado = await cliente.db("prestalibros").collection("registrodelibros").deleteOne({ nombre: nombrelibro });
 
     console.log(`${resultado.deletedCount} libro(s) han sido borrados.`);
 
+}
+
+function obtenerfecha(){
+    var fechadehoy = new Date();
+    var dd = String(fechadehoy.getDate()).padStart(2, '0');
+    var mm = String(fechadehoy.getMonth() + 1).padStart(2, '0'); //January is 0!
+    var yyyy = fechadehoy.getFullYear();
+
+    fechadehoy = mm + '/' + dd + '/' + yyyy;
+
+    return fechadehoy;
 }
 
 /* ############################################################################# */

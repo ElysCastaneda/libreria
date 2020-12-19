@@ -1,26 +1,48 @@
 <div class="row">
-    <h1>PRESTAR LIBROS</h1>
-    {{#each mislibros}}
+    <h1>PRESTAR LIBROS | {{ mislibros.nombre }}</h1>
+    <p>{{ mislibros._id }}</p>
+
     <div class="col-md-3">
         <div class="card my-3">
             <div class="card-body">
-                <h1 class="card-title d-flex">{{ nombre }}</h1>
-                <p>{{ autor }}</p>
+                <div class="form-group my-2">
+                    <h1 class="card-title d-flex">{{ mislibros.nombre }}</h1>
+                    <p>{{ mislibros.autor }}</p>
+                </div>
+                <form action="/libros/prestarlibro/{{mislibros.nombre}}?_method=PUT" method="POST">
+                    <input type="hidden" name="_method" value="PUT">
+                    <div class="form-group my-2">
+                    <input type="text" 
+                        name="nombre" 
+                        class="form-control" 
+                        placeholder="Nombre del Libro"
+                        value="{{mislibros.nombre}}" readonly>
+                    </div>
+                    <div class="form-group my-2">
+                        <input type="text"
+                            name="autor"
+                            class="form-control"
+                            placeholder="Autor del Libro"
+                            value="{{mislibros.autor}}" readonly>
+                    </div>
+                    <div class="form-group my-2">
+                        <input type="text" 
+                            name="lector" 
+                            class="form-control" 
+                            placeholder="Nombre del Lector"
+                            autofocus>
+                    </div>
+                     <form action="/libros/prestarlibro/{{mislibros.nombre}}?_method=PUT" method="POST">
+                        <input type="hidden" name="_method" value="PUT">
+                        <button type="submit" class="btn btn-success btn-block form-control">
+                            Prestar Libro
+                        </button>
+                    </form>
+                </form>
+               
+                
             </div>
-            <br>
-            <form action="/libros/editar/{{nombre}}" method="POST">
-                <button type="submit" class="btn btn-success btn-block form-control">
-                    Prestar Libro
-                </button>
-            </form>
-            <br>
-            <!--form action="/libros/borrar/{{nombre}}?_method=DELETE" method="POST">
-                <input type="hidden" name="_method" value="DELETE">
-                <button type="submit" class="btn btn-danger btn-block form-control my-2">
-                    Borrar Libro
-                </button>
-            </form-->
         </div>
     </div>
-    {{/each}}
+
 </div>
